@@ -1,55 +1,23 @@
+import webbrowser
+from flask import Flask, jsonify, render_template, request
 import math
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.layers import Conv2D, Dense, Flatten, Reshape, LeakyReLU, Dropout, UpSampling2D,AveragePooling2D,Conv2DTranspose, Input, Concatenate, Add, BatchNormalization, Activation, MultiHeadAttention
 import tensorflow_hub as hub
-import tensorflow_text as text
 from ipywidgets import IntProgress
 from IPython.display import display
 
-#bert
-tfhub_handle_encoder = 'https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-4_H-512_A-8/1'
-tfhub_handle_preprocess = 'https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3'
-bert_preprocess_model = hub.KerasLayer(tfhub_handle_preprocess)
-bert_model = hub.KerasLayer(tfhub_handle_encoder)
+app = Flask(__name__)
 
-#устанавливаем то, что не сохраняется в h5 файл
-embedding_dims = 32
-embedding_max_frequency = 1000.0
-image_size = 64
-img_channels = 3
-
-script_directory = os.path.dirname(os.path.realpath(__file__))
-model_path = os.path.join(script_directory, 'model.h5')
-
-network = tf.keras.models.load_model(model_path)
-
-def process_text(text_batch):
-    text_preprocessed = bert_preprocess_model(text_batch)
-    bert_results = bert_model(text_preprocessed)
-    return bert_results["pooled_output"]
-
-#апскейлер от tensorflow. довольно кривой.
-SAVED_MODEL_PATH = "https://tfhub.dev/captain-pool/esrgan-tf2/1"
-model_upscaler = hub.load(SAVED_MODEL_PATH)
-
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 class GaussianDiffusion:
-
-    #устанавливаем то, что не сохраняется в h5 файл
-    embedding_dims = 32
-    embedding_max_frequency = 1000.0
-    image_size = 64
-    img_channels = 3
-
-    script_directory = os.path.dirname(os.path.realpath(__file__))
-    model_path = os.path.join(script_directory, 'model.h5')
-
-    network = tf.keras.models.load_model(model_path)
     """Утилита для гауссовского диффузии.
 
     Args:
@@ -276,23 +244,47 @@ class DiffusionModel(keras.Model):
         plt.show()
         return generated_samples
     
-# total_timesteps = 500
 
-# # Get an instance of the Gaussian Diffusion utilities
-# gdf_util = GaussianDiffusion(timesteps=total_timesteps)
+# Определение остальных параметров и функций из второго скрипта
+total_timesteps = 500
+embedding_dims = 32
+embedding_max_frequency = 1000.0
+image_size = 64
+img_channels = 3
 
-# #устанавливаем то, что не сохраняется в h5 файл
-# embedding_dims = 32
-# embedding_max_frequency = 1000.0
-# image_size = 64
-# img_channels = 3
+script_directory = os.path.dirname(os.path.realpath(__file__))
+model_path = os.path.join(script_directory, 'model.h5')
 
-# script_directory = os.path.dirname(os.path.realpath(__file__))
-# model_path = os.path.join(script_directory, 'model.h5')
+network = tf.keras.models.load_model(model_path)
 
-# network = tf.keras.models.load_model(model_path)
+gdf_util = GaussianDiffusion(timesteps=total_timesteps)
+model = DiffusionModel(network=network, ema_network=network, gdf_util=gdf_util, timesteps=total_timesteps)
 
-# # Get the model
-# model = DiffusionModel(network=network, ema_network=network, gdf_util=gdf_util, timesteps=total_timesteps)
+# Ваш код Flask приложения
+@app.route('/generate', methods=['POST'])
+def generate():
+    try:
+        data = request.get_json()
 
-# _ = model.plot_images(num_rows=1, num_cols=1, annotation = "Clear room", ex_rate = 2)
+        # Извлекаем данные из запроса
+        num_images = int(data.get('num_images', 16))
+        annotation = data.get('annotation', '')
+        negative_prompt = data.get('negative_prompt', '')
+        ex_rate = float(data.get('ex_rate', 0))
+
+        # Генерируем изображения с использованием DiffusionModel
+        generated_samples = model.generate_images(num_images=num_images, annotation=annotation, negative_prompt=negative_prompt, ex_rate=ex_rate)
+        _ = model.plot_images(num_rows=1, num_cols=1, annotation = "Clear room", ex_rate = 2)
+
+        # Преобразование изображений в base64 (или в другой формат) для передачи обратно на клиент
+        # Зависит от того, как вы планируете возвращать изображения
+
+        return jsonify({'status': 'success', 'images': generated_samples.tolist()})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+
+if __name__ == '__main__':
+    webbrowser.open('http://127.0.0.1:5000/')
+    app.run(debug=True)

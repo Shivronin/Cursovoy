@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENERATING AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: 
+                linear-gradient(45deg, #26384b 25%, transparent 25%, transparent 75%, #26384b 75%, #26384b);
+            background-size: 200% 200%;
+            background-color: #1f1f1f;
+            color: #ddd;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #292929;
+        }
+
+        main {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .left-column {
+            width: 40%; /* Уменьшена ширина левой колонны */
+            margin-right: 2%;
+        }
+
+        .center-column {
+            width: 10%;
+            margin-left: 2%;
+            margin-right: 2%;
+        }
+
+        .right-column {
+            width: 44%; /* Увеличена ширина правой колонны */
+        }
+
+        .input-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #333;
+            color: #333;
+            background-color: #ddd;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .output-container {
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background-color: #333;
+            margin-top: 20px; /* Добавлен отступ сверху для разделения блоков */
+            position: relative;
+        }
+
+        .transparent-cube {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            border-radius: 5px;
+            height: 400%;
+            border: 2px solid rgba(255, 255, 255, 0.5); /* Прозрачные границы */
+            box-sizing: border-box;
+            pointer-events: none; /* Прозрачный куб не будет перехватывать события мыши */
+        }
+
+        .container-cube {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            border-radius: 5px;  
+            height: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.5); /* Прозрачные границы */
+            box-sizing: border-box;
+            pointer-events: none; /* Прозрачный куб не будет перехватывать события мыши */
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 style="margin: 0;">GENERATING AI</h1>
+    </header>
+
+    <main>
+        <div class="left-column">
+            <div class="input-container">
+                <label for="positive-input">Введите запрос:</label>
+                <input type="text" id="positive-input" name="positive-input">
+            </div>
+
+            <div class="input-container">
+                <label for="negative-input">Негативный запрос:</label>
+                <input type="text" id="negative-input" name="negative-input">
+            </div>
+
+            <div class="input-container">
+                <label for="image-size">Выберите размер изображения:</label>
+                <select id="image-size" name="image-size">
+                    <option value="256x256">256x256</option>
+                    <option value="512x512">512x512</option>
+                    <option value="1024x1024">1024x1024</option>
+                </select>
+            </div>
+
+            <div class="input-container">
+                <label for="image-count">Количество генерируемых изображений:</label>
+                <input type="number" id="image-count" name="image-count" min="1" value="1">
+            </div>
+
+            <button onclick="generateImage()">Генерировать изображение</button>
+        </div>
+
+        <div class="center-column"></div> <!-- Добавлена пустая колонка в центре -->
+
+        <div class="right-column">
+            <div class="output-container" id="output-image-container">
+                <h2>Сгенерированное изображение:</h2>
+                <div class="transparent-cube"></div>
+                <div class="container-cube"></div>
+                <div id="output-image"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        async function generateImage() {
+            try {
+                const positiveInput = document.getElementById('positive-input').value;
+                const negativeInput = document.getElementById('negative-input').value;
+                const imageSize = document.getElementById('image-size').value;
+                const imageCount = document.getElementById('image-count').value;
+    
+                const requestData = {
+                    num_images: parseInt(imageCount),
+                    annotation: positiveInput,
+                    negative_prompt: negativeInput,
+                    ex_rate: 0.1
+                };
+    
+                const response = await fetch('/generate_images', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                });
+    
+                const responseData = await response.json();
+    
+                if (responseData.status === 'success') {
+                    // Обработка сгенерированных изображений, например, их отображение на странице
+                    const outputImageContainer = document.getElementById('output-image-container');
+                    const outputImage = document.getElementById('output-image');
+                    
+                    // Предполагается, что у вас есть метод для отображения изображений
+                    displayImages(responseData.images, outputImage);
+    
+                    // По желанию можно также обновить контейнер вывода
+                    outputImageContainer.style.display = 'block';
+                    outputImageContainer.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    console.error(responseData.message);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        }
+    
+        function displayImages(images, outputElement) {
+            // Предполагается, что images - это массив строк изображений в формате base64
+            const imageElements = images.map(base64Image => {
+                const img = new Image();
+                img.src = 'data:image/png;base64,' + base64Image;
+                img.alt = 'Сгенерированное изображение';
+                return img;
+            });
+    
+            // Очистка предыдущего содержимого
+            outputElement.innerHTML = '';
+    
+            // Добавление новых изображений в контейнер вывода
+            imageElements.forEach(img => {
+                outputElement.appendChild(img);
+            });
+        }
+    </script>
+</body>
+</html>
