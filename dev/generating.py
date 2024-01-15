@@ -276,23 +276,23 @@ class DiffusionModel(keras.Model):
         plt.show()
         return generated_samples
     
-# total_timesteps = 500
+total_timesteps = 500
 
-# # Get an instance of the Gaussian Diffusion utilities
-# gdf_util = GaussianDiffusion(timesteps=total_timesteps)
+# Get an instance of the Gaussian Diffusion utilities
+gdf_util = GaussianDiffusion(timesteps=total_timesteps)
 
-# #устанавливаем то, что не сохраняется в h5 файл
-# embedding_dims = 32
-# embedding_max_frequency = 1000.0
-# image_size = 64
-# img_channels = 3
+#устанавливаем то, что не сохраняется в h5 файл
+embedding_dims = 32
+embedding_max_frequency = 1000.0
+image_size = 64
+img_channels = 3
 
-# script_directory = os.path.dirname(os.path.realpath(__file__))
-# model_path = os.path.join(script_directory, 'model.h5')
+script_directory = os.path.dirname(os.path.realpath(__file__))
+model_path = os.path.join(script_directory, 'model.h5')
 
-# network = tf.keras.models.load_model(model_path)
+network = tf.keras.models.load_model(model_path)
 
-# # Get the model
-# model = DiffusionModel(network=network, ema_network=network, gdf_util=gdf_util, timesteps=total_timesteps)
+# Get the model
+model = DiffusionModel(network=network, ema_network=network, gdf_util=gdf_util, timesteps=total_timesteps)
 
-# _ = model.plot_images(num_rows=1, num_cols=1, annotation = "Clear room", ex_rate = 2)
+_ = model.plot_images(num_rows=1, num_cols=1, annotation = "Clear room", ex_rate = 2)

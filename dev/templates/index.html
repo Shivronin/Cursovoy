@@ -87,19 +87,6 @@
             position: relative;
         }
 
-        .transparent-cube {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            border-radius: 5px;
-            height: 400%;
-            border: 2px solid rgba(255, 255, 255, 0.5); /* Прозрачные границы */
-            box-sizing: border-box;
-            pointer-events: none; /* Прозрачный куб не будет перехватывать события мыши */
-        }
-
         .container-cube {
             position: absolute;
             top: 0;
@@ -152,7 +139,7 @@
                 <input type="number" id="image-count" name="image-count" min="1" value="1">
             </div>
 
-            <button onclick="generateImage()">Генерировать изображение</button>
+            <button onclick="generateImages()">Генерировать изображение</button>
         </div>
 
         <div class="center-column"></div> <!-- Добавлена пустая колонка в центре -->
@@ -168,66 +155,35 @@
     </main>
 
     <script>
-        async function generateImage() {
-            try {
-                const positiveInput = document.getElementById('positive-input').value;
-                const negativeInput = document.getElementById('negative-input').value;
-                const imageSize = document.getElementById('image-size').value;
-                const imageCount = document.getElementById('image-count').value;
-    
-                const requestData = {
-                    num_images: parseInt(imageCount),
-                    annotation: positiveInput,
-                    negative_prompt: negativeInput,
-                    ex_rate: 0.1
-                };
-    
-                const response = await fetch('/generate_images', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestData),
-                });
-    
-                const responseData = await response.json();
-    
-                if (responseData.status === 'success') {
-                    // Обработка сгенерированных изображений, например, их отображение на странице
-                    const outputImageContainer = document.getElementById('output-image-container');
-                    const outputImage = document.getElementById('output-image');
-                    
-                    // Предполагается, что у вас есть метод для отображения изображений
-                    displayImages(responseData.images, outputImage);
-    
-                    // По желанию можно также обновить контейнер вывода
-                    outputImageContainer.style.display = 'block';
-                    outputImageContainer.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    console.error(responseData.message);
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-            }
-        }
-    
-        function displayImages(images, outputElement) {
-            // Предполагается, что images - это массив строк изображений в формате base64
-            const imageElements = images.map(base64Image => {
-                const img = new Image();
-                img.src = 'data:image/png;base64,' + base64Image;
-                img.alt = 'Сгенерированное изображение';
-                return img;
+        function generateImages() {
+        // Отправка POST-запроса на сервер Flask для генерации изображений
+        fetch('/generate_images', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'annotation': 'Clear room',  // Замените на желаемую аннотацию
+                'ex_rate': '2',  // Замените на желаемую степень экстраполяции
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Отображение сгенерированных изображений
+            const outputImageContainer = document.getElementById('output-image');
+            outputImageContainer.innerHTML = '';  // Очищаем предыдущее изображение
+            data.images.forEach(image => {
+                const imgElement = document.createElement('img');
+                imgElement.src = 'data:image/png;base64,' + image;
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.height = 'auto';
+                imgElement.style.borderRadius = '5px';
+                imgElement.style.marginTop = '20px';
+                outputImageContainer.appendChild(imgElement);
             });
-    
-            // Очистка предыдущего содержимого
-            outputElement.innerHTML = '';
-    
-            // Добавление новых изображений в контейнер вывода
-            imageElements.forEach(img => {
-                outputElement.appendChild(img);
-            });
-        }
+        })
+        .catch(error => console.error('Ошибка:', error));
+    }
     </script>
 </body>
 </html>
