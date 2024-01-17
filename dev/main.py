@@ -9,6 +9,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, Reshape, LeakyReLU, Dropout, UpSampling2D,AveragePooling2D,Conv2DTranspose, Input, Concatenate, Add, BatchNormalization, Activation, MultiHeadAttention
 import tensorflow_hub as hub
 import tensorflow_text as text
 from ipywidgets import IntProgress
@@ -212,7 +213,7 @@ class DiffusionModel(keras.Model):
         self.ema = ema
 
 
-    def generate_images(self, num_images=16, annotation = " ", negative_prompt = " ", ex_rate = 0):
+    def generate_images(self, num_images=16, annotation = " ", negative_prompt = " ", ex_rate = 0, size = 256):
         
         # 1.1 Преобразуем текст в эмбеддинг
         annotation = tf.expand_dims(annotation, axis = 0)
@@ -246,13 +247,15 @@ class DiffusionModel(keras.Model):
             
         #если нужен апскейлер
         #samples = model_upscaler(samples * 127 + 127)
-        samples = tf.image.resize(samples*127+127, (256, 256), method = 'bilinear')
+        samples = tf.image.resize(samples*127+127, (size, size), method = 'bilinear')
         
         return samples
 
-    def plot_images(self, epoch=None, logs=None, num_rows=2, num_cols=4, figsize=(12, 5), annotation=" ", ex_rate=0):
+    def plot_images(self, epoch=None, logs=None, num_rows=2, num_cols=4, figsize=(12, 5), annotation=" ", ex_rate=0, size = 256):
+
+        print(f"Received annotation: {annotation} , {size}")
         
-        generated_samples = self.generate_images(num_images=num_rows * num_cols, annotation=annotation, ex_rate=ex_rate)
+        generated_samples = self.generate_images(num_images=num_rows * num_cols, annotation=annotation, ex_rate=ex_rate, size = size)
         generated_samples = (tf.clip_by_value(generated_samples, 0.0, 255.0).numpy().astype(np.uint8))
 
         _, ax = plt.subplots(num_rows, num_cols, figsize=figsize)
@@ -294,9 +297,11 @@ model = DiffusionModel(network=network, ema_network=network, gdf_util=gdf_util, 
 @app.route('/generate_images', methods=['POST'])
 def generate_images():
     annotation = request.form.get('annotation', '')
+    num_cols = request.form.get('num_cols')
     ex_rate = float(request.form.get('ex_rate', '0'))
+    size = int(request.form.get('image_size'))
 
-    generated_samples = model.plot_images(num_rows=1, num_cols=1, annotation = "horse", ex_rate = 2)
+    generated_samples = model.plot_images(num_rows=1, num_cols= int(num_cols), annotation = annotation, ex_rate = 2, size = size)
     
     # Преобразование изображений в формат base64 для отправки на фронтенд
     image_list = []

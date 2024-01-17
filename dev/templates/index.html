@@ -128,9 +128,9 @@
             <div class="input-container">
                 <label for="image-size">Выберите размер изображения:</label>
                 <select id="image-size" name="image-size">
-                    <option value="256x256">256x256</option>
-                    <option value="512x512">512x512</option>
-                    <option value="1024x1024">1024x1024</option>
+                    <option value="256">256x256</option>
+                    <option value="512">512x512</option>
+                    <option value="756">756x756</option>
                 </select>
             </div>
 
@@ -155,35 +155,50 @@
     </main>
 
     <script>
+        // Устанавливаем начальный текст для поля позитивных запросов
+        document.getElementById('positive-input').value = 'Clear room';
+
+        // Блокируем ввод в поле негативных запросов с сообщением
+        const negativeInput = document.getElementById('negative-input');
+        negativeInput.disabled = true;
+        negativeInput.placeholder = 'Функция в разработке';
+
         function generateImages() {
-        // Отправка POST-запроса на сервер Flask для генерации изображений
-        fetch('/generate_images', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                'annotation': 'Clear room',  // Замените на желаемую аннотацию
-                'ex_rate': '2',  // Замените на желаемую степень экстраполяции
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Отображение сгенерированных изображений
-            const outputImageContainer = document.getElementById('output-image');
-            outputImageContainer.innerHTML = '';  // Очищаем предыдущее изображение
-            data.images.forEach(image => {
-                const imgElement = document.createElement('img');
-                imgElement.src = 'data:image/png;base64,' + image;
-                imgElement.style.maxWidth = '100%';
-                imgElement.style.height = 'auto';
-                imgElement.style.borderRadius = '5px';
-                imgElement.style.marginTop = '20px';
-                outputImageContainer.appendChild(imgElement);
-            });
-        })
-        .catch(error => console.error('Ошибка:', error));
-    }
+            // Получаем значение из поля ввода positive-input
+            const positiveInputValue = document.getElementById('positive-input').value;
+            const imageCount = document.getElementById('image-count').value;
+            const imageSize = document.getElementById('image-size').value;
+
+            // Отправка POST-запроса на сервер Flask для генерации изображений
+            fetch('/generate_images', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'annotation': positiveInputValue,  // Передаем значение из поля ввода
+                    'ex_rate': '2',  // Замените на желаемую степень экстраполяции
+                    'num_cols': imageCount, 
+                    'image_size': imageSize,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Отображение сгенерированных изображений
+                const outputImageContainer = document.getElementById('output-image');
+                outputImageContainer.innerHTML = '';  // Очищаем предыдущее изображение
+                data.images.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = 'data:image/png;base64,' + image;
+                    imgElement.style.maxWidth = '100%';
+                    imgElement.style.height = 'auto';
+                    imgElement.style.borderRadius = '5px';
+                    imgElement.style.marginTop = '20px';
+                    outputImageContainer.appendChild(imgElement);
+                });
+            })
+            .catch(error => console.error('Ошибка:', error));
+        }
     </script>
 </body>
 </html>
