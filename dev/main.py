@@ -26,15 +26,23 @@ bert_model = hub.KerasLayer(tfhub_handle_encoder)
 
 #устанавливаем то, что не сохраняется в h5 файл
 embedding_dims = 32
+"""Определяет размерность эмбеддинга текста. Эмбеддинг представляет собой 
+векторное представление текста в числовой форме. В данном случае, размерность эмбеддинга равна 32."""
 embedding_max_frequency = 1000.0
+"""
+Эта переменная указывает максимальную частоту слова при использовании модели BERT (используется в коде). 
+Слова, частота которых превышает это значение, могут быть проигнорированы при обработке текста. 
+Значение 1000.0 означает, что слова с частотой до 1000 включительно будут учтены.
+"""
 image_size = 64
-img_channels = 3
+img_channels = 3 #Количество каналов в изображении
 
 script_directory = os.path.dirname(os.path.realpath(__file__))
 model_path = os.path.join(script_directory, 'model.h5')
 
 network = tf.keras.models.load_model(model_path)
 
+# Функция обработки текста с использованием BERT
 def process_text(text_batch):
     text_preprocessed = bert_preprocess_model(text_batch)
     bert_results = bert_model(text_preprocessed)
@@ -66,6 +74,8 @@ class GaussianDiffusion:
         self.clip_max = clip_max
 
         # Определение линейного расписания дисперсии
+        """Линейное расписание дисперсии (Linear Schedule of Variance) используется в контексте гауссовской диффузии.
+        В гауссовской диффузии происходит последовательное применение гауссовского шума к данным, и дисперсия этого шума изменяется с течением времени."""
         self.betas = betas = np.linspace(
             beta_start,
             beta_end,
@@ -276,8 +286,6 @@ class DiffusionModel(keras.Model):
 
         return generated_samples
     
-
-# Определение остальных параметров и функций из второго скрипта
 total_timesteps = 500
 embedding_dims = 32
 embedding_max_frequency = 1000.0
