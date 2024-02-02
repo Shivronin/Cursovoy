@@ -2,6 +2,7 @@ import base64
 import webbrowser
 from flask import Flask, jsonify, render_template, request
 import math
+import unittest
 import os
 import cv2
 import numpy as np
@@ -44,6 +45,7 @@ network = tf.keras.models.load_model(model_path)
 
 # Функция обработки текста с использованием BERT
 def process_text(text_batch):
+    
     text_preprocessed = bert_preprocess_model(text_batch)
     bert_results = bert_model(text_preprocessed)
     return bert_results["pooled_output"]
@@ -319,6 +321,25 @@ def generate_images():
 
     return jsonify({"images": image_list})
 
+class TestYourApp(unittest.TestCase):
+    def setUp(self):
+        # Создайте экземпляр тестового клиента Flask
+        self.app = app.test_client()
+
+    def test_index_route(self):
+        # Проверьте, что маршрут '/' возвращает код 200 OK
+        response = self.app.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_generate_images_route(self):
+        # Проверьте, что маршрут '/generate_images' возвращает код 200 OK при отправке POST-запроса
+        response = self.app.post('/generate_images', data={'annotation': 'Test Annotation', 'num_cols': '2', 'ex_rate': '0.5', 'image_size': '256'})
+        self.assertEqual(response.status_code, 200)
+
+        # Дополнительные тесты, если необходимо
+
+
 if __name__ == '__main__':
+    unittest.main()
     webbrowser.open('http://127.0.0.1:5000/')
     app.run(debug=True)
